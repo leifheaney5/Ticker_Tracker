@@ -80,8 +80,6 @@ export PUSHBULLET_API_KEY="o.xxxxxxYOURKEYxxxxxx"
 
 In app.py, uncomment/configure the Pushbullet section. Alerts will fire automatically when a symbol hits your target.
 
-![image](https://github.com/user-attachments/assets/ffae1db6-c78d-4a1f-9a74-1e1433432a9c)
-
 ---
 
 Changelog
