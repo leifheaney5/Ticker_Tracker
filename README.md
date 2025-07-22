@@ -5,12 +5,9 @@
   - Optional Pushbullet integration lets you know the moment a ticker hits your target price
   - Track your stocks in real‑time with charts and notifications—no fluff.
 
-## Contact Info
+---
 
-Developer: Leif Heaney
-Email: leif@leifheaney.com
-Portfolio: https://leifheaney.com/
-GitHub: https://github.com/leifheaney5
+## Contact Info
 
 ### Developer: Leif Heaney
 ### Contact: leif@leifheaney.com
@@ -19,7 +16,9 @@ GitHub: https://github.com/leifheaney5
 ### Created On: 2024-09-09
 ### Last Updated: 2025-07-22
 
-### Important Info: 
+---
+
+### Important Info about yfinance API: 
 
 - yfinance API has had issues lately with updates; as such, upon installation if you experience an errors fetching tickers that you are positive have not been delisted, 
 pip install a prior version of finance, using the following command: 'pip install yfinance==0.1.63'
