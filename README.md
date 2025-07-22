@@ -27,11 +27,6 @@ pip install a prior version of finance, using the following command: 'pip instal
 As such, incorporate this feature if you would like using your own custom-generated API key here: https://docs.pushbullet.com/
 <img width="1061" height="1193" alt="TickerTracker-Screenshot" src="https://github.com/user-attachments/assets/47692e15-0e52-4f0c-b185-a055eeb54950" />
 <img width="1342" height="846" alt="TickerTracker-Table-Screenshot" src="https://github.com/user-attachments/assets/eac81432-dbde-407d-b814-01966592ede2" />
----
-
-![Dashboard](images/1c300a31-a5fe-4c9f-9fc9-497981506fab.png)  
-![Line Chart](images/f16e5378-c5b1-48fb-ac66-180f2ebd3614.png)  
-![Pushbullet Setup](images/fee7e5e1-d2ad-4c72-80aa-a8f4ba347a77.png)  
 
 ---
 
