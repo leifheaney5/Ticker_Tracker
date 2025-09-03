@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticker Tracker - Simple Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+    }
+    .dashboard-container {
+      padding: 2rem;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      backdrop-filter: blur(10px);
+    }
+    .price-up { color: #00d4aa; }
+    .price-down { color: #ff6b6b; }
+    .loading { opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <h1 class="text-center mb-4">Ticker Tracker - Simple Dashboard</h1>
+    
+    <!-- Stats Cards -->
+    <div class="row">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <h6>Total Portfolio Value</h6>
+          <h3 id="totalValue">Loading...</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <h6>Total Stocks</h6>
+          <h3 id="totalStocks">Loading...</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <h6>Top Performer</h6>
+          <h3 id="topPerformer">Loading...</h3>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <h6>Avg Daily Change</h6>
+          <h3 id="avgChange">Loading...</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="stat-card mt-4">
+      <h5>Stock Data</h5>
+      <div class="table-responsive">
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Current Price</th>
+              <th>Change</th>
+              <th>Change %</th>
+              <th>Volume</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody">
+            <tr><td colspan="5" class="text-center">Loading stock data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Debug Info -->
+    <div class="stat-card mt-4">
+      <h6>Debug Info</h6>
+      <div id="debugInfo">Initializing...</div>
+    </div>
+  </div>
+
+  <script>
+    console.log('Simple dashboard JavaScript loaded');
+    
+    let stockData = [];
+    
+    function updateDebug(message) {
+      const debugDiv = document.getElementById('debugInfo');
+      debugDiv.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + message;
+    }
+    
+    async function fetchTickerData() {
+      try {
+        updateDebug('Starting fetch...');
+        const response = await fetch('/data');
+        updateDebug('Response status: ' + response.status);
+        
+        const data = await response.json();
+        updateDebug('Received ' + (data.tickers ? data.tickers.length : 0) + ' tickers');
+        
+        stockData = data.tickers || [];
+        updateStatsCards(stockData);
+        updateTable(stockData);
+        
+      } catch (error) {
+        updateDebug('Error: ' + error.message);
+        console.error('Error fetching data:', error);
+      }
+    }
+    
+    function updateStatsCards(data) {
+      try {
+        // Total Portfolio Value (sum of all prices)
+        const totalValue = data.reduce((sum, stock) => sum + stock.current_price, 0);
+        document.getElementById('totalValue').textContent = '$' + totalValue.toFixed(2);
+        
+        // Total Stocks
+        document.getElementById('totalStocks').textContent = data.length;
+        
+        // Top Performer (highest change %)
+        const topStock = data.reduce((max, stock) => 
+          stock.change_percent > max.change_percent ? stock : max, data[0] || {});
+        document.getElementById('topPerformer').textContent = topStock.symbol || 'N/A';
+        
+        // Average Daily Change
+        const avgChange = data.reduce((sum, stock) => sum + stock.change_percent, 0) / data.length;
+        const avgElement = document.getElementById('avgChange');
+        avgElement.textContent = (avgChange || 0).toFixed(2) + '%';
+        avgElement.className = avgChange > 0 ? 'price-up' : avgChange < 0 ? 'price-down' : '';
+        
+        updateDebug('Stats updated successfully');
+      } catch (error) {
+        updateDebug('Error updating stats: ' + error.message);
+      }
+    }
+    
+    function updateTable(data) {
+      try {
+        const tbody = document.getElementById('stockTableBody');
+        tbody.innerHTML = '';
+        
+        data.forEach(stock => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${stock.symbol}</strong></td>
+            <td>$${stock.current_price.toFixed(2)}</td>
+            <td class="${stock.change > 0 ? 'price-up' : stock.change < 0 ? 'price-down' : ''}">
+              ${stock.change > 0 ? '+' : ''}${stock.change.toFixed(2)}
+            </td>
+            <td class="${stock.change_percent > 0 ? 'price-up' : stock.change_percent < 0 ? 'price-down' : ''}">
+              ${stock.change_percent > 0 ? '+' : ''}${stock.change_percent.toFixed(2)}%
+            </td>
+            <td>${stock.volume ? stock.volume.toLocaleString() : 'N/A'}</td>
+          `;
+          tbody.appendChild(row);
+        });
+        
+        updateDebug('Table updated with ' + data.length + ' rows');
+      } catch (error) {
+        updateDebug('Error updating table: ' + error.message);
+      }
+    }
+    
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDebug('DOM loaded, starting fetch...');
+      fetchTickerData();
+      
+      // Set up auto-refresh every 5 seconds
+      setInterval(fetchTickerData, 5000);
+      updateDebug('Auto-refresh set up (5 seconds)');
+    });
+  </script>
+</body>
+</html>

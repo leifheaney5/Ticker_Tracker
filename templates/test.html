@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Ticker Data</title>
+</head>
+<body>
+    <h1>Ticker Test</h1>
+    <div id="status">Loading...</div>
+    <div id="data"></div>
+
+    <script>
+        console.log('Test page loaded');
+        
+        async function testFetch() {
+            try {
+                console.log('Fetching data...');
+                const response = await fetch('/data');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                document.getElementById('status').textContent = 'Data loaded successfully!';
+                document.getElementById('data').innerHTML = `
+                    <h2>Summary</h2>
+                    <p>Total tickers: ${data.summary.total_tickers}</p>
+                    <p>Successful: ${data.summary.successful}</p>
+                    <p>Failed: ${data.summary.failed}</p>
+                    
+                    <h2>First Few Tickers</h2>
+                    <ul>
+                        ${data.tickers.slice(0, 5).map(ticker => 
+                            `<li>${ticker.ticker}: $${ticker.current_price} (${ticker.price_change_pct_24h}%)</li>`
+                        ).join('')}
+                    </ul>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Test immediately when page loads
+        testFetch();
+    </script>
+</body>
+</html>

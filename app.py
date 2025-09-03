@@ -17,11 +17,9 @@ except ImportError:
     YAHOOQUERY_AVAILABLE = False
 
 from flask import Flask, render_template, jsonify
-from flask_bootstrap import Bootstrap
 import pandas as pd
 
 app = Flask(__name__)
-Bootstrap(app)
 
 # ─── Ticker & Alert Configuration ──────────────────────────────────────────────
 tickers = {
@@ -377,6 +375,18 @@ def fetch_ticker_data_concurrent(max_workers=5):
 def index():
     return render_template('index.html')
 
+@app.route('/debug')
+def debug():
+    return render_template('debug.html')
+
+@app.route('/test')
+def test():
+    return render_template('test.html')
+
+@app.route('/simple')
+def simple():
+    return render_template('simple.html')
+
 
 @app.route('/data')
 def data_route():
@@ -408,5 +418,5 @@ if __name__ == "__main__":
     # Clear cache on startup
     clear_yfinance_cache()
     
-    # Run Flask without reloader (to avoid duplicate threads)
-    app.run(debug=False, use_reloader=False, host='0.0.0.0', port=5000)
+    # Run Flask app
+    app.run(host='127.0.0.1', port=5000, debug=True)

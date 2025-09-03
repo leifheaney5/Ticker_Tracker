@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+</head>
+<body>
+    <h1>Debug Test Page</h1>
+    <div id="status">Waiting for JavaScript...</div>
+    <div id="output"></div>
+
+    <script>
+        console.log('=== DEBUG PAGE LOADED ===');
+        document.getElementById('status').textContent = 'JavaScript is working!';
+
+        async function testFetch() {
+            try {
+                console.log('Testing fetch...');
+                const response = await fetch('/data');
+                console.log('Response received:', response.status);
+                const data = await response.json();
+                console.log('Data:', data);
+                document.getElementById('output').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('Fetch error:', error);
+                document.getElementById('output').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DEBUG DOM READY ===');
+            testFetch();
+            setInterval(testFetch, 5000);
+        });
+    </script>
+</body>
+</html>
