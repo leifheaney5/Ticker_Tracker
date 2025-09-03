@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ticker Tracker</title>
+  
+  <!-- Bootstrap + Roboto -->
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      background-color: #2c003e;
+      color: white;
+      font-family: 'Roboto', sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .navbar {
+      background-color: #3e004f;
+      border-bottom: 1px solid #5e005f;
+    }
+    .navbar-brand,
+    .toggle-dark-mode {
+      color: white;
+      cursor: pointer;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    .dark-mode .navbar {
+      background-color: #1f1f1f;
+      border-bottom: 1px solid #333;
+    }
+
+    /* —— Improved Table Styling —— */
+    .table-responsive {
+      margin-top: 20px;
+    }
+    /* make table container stand out */
+    .table {
+      background-color: transparent;
+    }
+    /* header row */
+    .table thead th {
+      background-color: #5e005f;
+      color: #ffffff;
+      border-color: #7e007f;
+    }
+    /* alternating row colors */
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    .table-striped tbody tr:nth-of-type(even) {
+      background-color: rgba(255, 255, 255, 0.10);
+    }
+    /* cell borders and text */
+    .table th,
+    .table td {
+      border: 1px solid #7e007f;
+      padding: 8px 12px;
+      color: #e0e0e0;
+    }
+    /* hover state */
+    .table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.20);
+      color: #ffffff;
+    }
+
+    /* dark‑mode overrides */
+    .dark-mode .table thead th {
+      background-color: #2c2c2c;
+      border-color: #444;
+    }
+    .dark-mode .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(0, 0, 0, 0.20);
+    }
+    .dark-mode .table-striped tbody tr:nth-of-type(even) {
+      background-color: rgba(0, 0, 0, 0.10);
+    }
+    .dark-mode .table th,
+    .dark-mode .table td {
+      border-color: #444;
+      color: #e0e0e0;
+    }
+    .dark-mode .table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+    }
+    /* —— End Table Styling —— */
+
+    /* Chart containers */
+    .chart-container {
+      position: relative;
+      margin: 40px auto;
+      max-width: 800px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg">
+    <a class="navbar-brand" onclick="toggleDarkMode()">Ticker Tracker</a>
+    <span class="toggle-dark-mode" onclick="toggleDarkMode()">🌙</span>
+  </nav>
+
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">Live Ticker Prices</h1>
+
+    <!-- Bar Chart: Current Prices -->
+    <div class="chart-container">
+      <canvas id="barChart"></canvas>
+    </div>
+
+    <!-- Line Chart: 30‑Day Price History -->
+    <div class="chart-container">
+      <canvas id="lineChart"></canvas>
+    </div>
+
+    <!-- Data table -->
+    <div class="table-responsive">
+      <table class="table table-striped mb-5">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Current Price</th>
+            <th>52‑Week Low</th>
+            <th>52‑Week High</th>
+            <th>All‑Time Low</th>
+            <th>All‑Time High</th>
+          </tr>
+        </thead>
+        <tbody id="ticker-table-body">
+          <!-- JS will inject rows here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    let barChart, lineChart;
+
+    function updateBarChart(data) {
+      const labels = data.map(d => d.ticker);
+      const prices = data.map(d => d.current_price);
+      if (barChart) {
+        barChart.data.labels = labels;
+        barChart.data.datasets[0].data = prices;
+        barChart.update();
+      } else {
+        const ctx = document.getElementById('barChart').getContext('2d');
+        barChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Current Price',
+              data: prices,
+              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              borderColor:   'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: { y: { beginAtZero: false } },
+            plugins: { legend: { labels: { color: 'white' } } }
+          }
+        });
+      }
+    }
+
+    function updateLineChart(data) {
+      if (!data.length) return;
+      const dates = data[0].history.dates;
+      const datasets = data.map(d => ({
+        label: d.ticker,
+        data: d.history.prices,
+        fill: false,
+        tension: 0.1,
+        borderWidth: 2,
+        pointBackgroundColor: 'white',
+        borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`
+      }));
+
+      if (lineChart) {
+        lineChart.data.labels   = dates;
+        lineChart.data.datasets = datasets;
+        lineChart.update();
+      } else {
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        lineChart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: dates, datasets },
+          options: {
+            responsive: true,
+            scales: {
+              x: { ticks: { color: 'white' } },
+              y: { beginAtZero: false }
+            },
+            plugins: { legend: { labels: { color: 'white' } } }
+          }
+        });
+      }
+    }
+
+    async function fetchTickerData() {
+      try {
+        const res  = await fetch('/data');
+        const response = await res.json();
+        
+        // Extract the tickers array from the response
+        const data = response.tickers || [];
+
+        // populate table
+        const tbody = document.getElementById('ticker-table-body');
+        tbody.innerHTML = '';
+        data.forEach(t => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${t.ticker}</td>
+            <td>${t.current_price.toFixed(2)}</td>
+            <td>${t.week52_low.toFixed(2)}</td>
+            <td>${t.week52_high.toFixed(2)}</td>
+            <td>${t.all_time_low.toFixed(2)}</td>
+            <td>${t.all_time_high.toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        updateBarChart(data);
+        updateLineChart(data);
+      } catch (err) {
+        console.error('Error loading ticker data:', err);
+      }
+    }
+
+    fetchTickerData();
+    setInterval(fetchTickerData, 5000);
+  </script>
+</body>
+</html>
