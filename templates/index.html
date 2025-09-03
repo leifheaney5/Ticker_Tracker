@@ -9,9 +9,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <!-- Temporarily removing Chart.js to fix JavaScript execution -->
-  <!-- Chart.js -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script> -->
+  <!-- Plotly.js for reliable charting -->
+  <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
   
   <!-- Quick JavaScript test -->
   <script>
@@ -479,7 +478,7 @@
                   </select>
                 </div>
               </div>
-              <canvas id="performanceChart" height="120"></canvas>
+              <div id="performanceChart" style="height: 300px;"></div>
             </div>
           </div>
           <div class="col-lg-6">
@@ -489,7 +488,7 @@
                   <i class="bi bi-bullseye me-2"></i>Distance from 52W High
                 </h3>
               </div>
-              <canvas id="distanceChart" height="120"></canvas>
+              <div id="distanceChart" style="height: 300px;"></div>
             </div>
           </div>
         </div>
@@ -503,7 +502,7 @@
                   <i class="bi bi-bar-chart-line me-2"></i>Price vs Target Analysis
                 </h3>
               </div>
-              <canvas id="targetChart" height="100"></canvas>
+              <div id="targetChart" style="height: 250px;"></div>
             </div>
           </div>
           <div class="col-lg-4">
@@ -513,7 +512,7 @@
                   <i class="bi bi-pie-chart me-2"></i>Portfolio Value Mix
                 </h3>
               </div>
-              <canvas id="pieChart" height="200"></canvas>
+              <div id="pieChart" style="height: 300px;"></div>
             </div>
           </div>
         </div>
@@ -527,7 +526,7 @@
                   <i class="bi bi-activity me-2"></i>Risk-Return Matrix
                 </h3>
               </div>
-              <canvas id="riskReturnChart" height="120"></canvas>
+              <div id="riskReturnChart" style="height: 300px;"></div>
             </div>
           </div>
           <div class="col-lg-6">
@@ -596,13 +595,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <script>
-    // Chart variables
-    let performanceChart = null;
-    let distanceChart = null;
-    let targetChart = null;
-    let portfolioChart = null;
-    let riskReturnChart = null;
-    
+    // Plotly chart variables
     let stockData = [];
     let isDarkMode = false;
 
@@ -615,292 +608,280 @@
       updateAllCharts();
     }
 
-    // Performance Distribution Chart
+    // Performance Distribution Chart using Plotly
     function createPerformanceChart() {
-      if (performanceChart) {
-        performanceChart.destroy();
-      }
+      if (!stockData.length) return;
 
-      const ctx = document.getElementById('performanceChart').getContext('2d');
+      const tickers = stockData.map(stock => stock.ticker);
+      const performances = stockData.map(stock => parseFloat(stock.price_change_pct_24h) || 0);
       
-      performanceChart = new Chart(ctx, {
+      const colors = performances.map(val => val >= 0 ? '#4CAF50' : '#F44336');
+
+      const data = [{
+        x: tickers,
+        y: performances,
         type: 'bar',
-        data: {
-          labels: [],
-          datasets: [{
-            label: 'Performance %',
-            data: [],
-            backgroundColor: function(context) {
-              const value = context.parsed.y;
-              return value >= 0 ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)';
-            },
-            borderColor: function(context) {
-              const value = context.parsed.y;
-              return value >= 0 ? 'rgba(76, 175, 80, 1)' : 'rgba(244, 67, 54, 1)';
-            },
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              callbacks: {
-                label: function(context) {
-                  return `${context.label}: ${context.parsed.y.toFixed(2)}%`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: '#ffffff', maxRotation: 45, font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            },
-            y: {
-              ticks: { 
-                color: '#ffffff',
-                font: { family: 'Inter' },
-                callback: function(value) { return value + '%'; }
-              },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
+        marker: {
+          color: colors,
+          line: {
+            color: 'rgba(255,255,255,0.3)',
+            width: 1
           }
-        }
-      });
+        },
+        hovertemplate: '%{x}: %{y:.2f}%<extra></extra>'
+      }];
+
+      const layout = {
+        title: {
+          text: '',
+          font: { color: '#ffffff', family: 'Inter' }
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ffffff', family: 'Inter' },
+        xaxis: {
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)',
+          tickangle: -45
+        },
+        yaxis: {
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)',
+          ticksuffix: '%'
+        },
+        margin: { l: 50, r: 20, t: 20, b: 80 },
+        height: 300
+      };
+
+      Plotly.newPlot('performanceChart', data, layout, {responsive: true, displayModeBar: false});
     }
 
     // Distance from 52W High Chart
     function createDistanceChart() {
-      if (distanceChart) {
-        distanceChart.destroy();
-      }
+      if (!stockData.length) return;
 
-      const ctx = document.getElementById('distanceChart').getContext('2d');
-      
-      distanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: [],
-          datasets: [{
-            label: 'Distance from 52W High %',
-            data: [],
-            backgroundColor: 'rgba(255, 193, 7, 0.8)',
-            borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          indexAxis: 'y',
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              callbacks: {
-                label: function(context) {
-                  return `${context.label}: ${Math.abs(context.parsed.x).toFixed(2)}% below high`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { 
-                color: '#ffffff',
-                font: { family: 'Inter' },
-                callback: function(value) { return Math.abs(value) + '%'; }
-              },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            },
-            y: {
-              ticks: { color: '#ffffff', font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
-          }
-        }
+      const tickers = stockData.map(stock => stock.ticker);
+      const distances = stockData.map(stock => {
+        return stock.week52_high ? ((stock.current_price - stock.week52_high) / stock.week52_high) * 100 : 0;
       });
+
+      const data = [{
+        y: tickers,
+        x: distances.map(d => Math.abs(d)),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: '#FFC107',
+          line: {
+            color: 'rgba(255,255,255,0.3)',
+            width: 1
+          }
+        },
+        hovertemplate: '%{y}: %{x:.2f}% below high<extra></extra>'
+      }];
+
+      const layout = {
+        title: { text: '', font: { color: '#ffffff', family: 'Inter' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ffffff', family: 'Inter' },
+        xaxis: {
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)',
+          ticksuffix: '%'
+        },
+        yaxis: {
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)'
+        },
+        margin: { l: 80, r: 20, t: 20, b: 50 },
+        height: 300
+      };
+
+      Plotly.newPlot('distanceChart', data, layout, {responsive: true, displayModeBar: false});
     }
 
     // Price vs Target Analysis Chart
     function createTargetChart() {
-      if (targetChart) {
-        targetChart.destroy();
-      }
+      if (!stockData.length) return;
 
-      const ctx = document.getElementById('targetChart').getContext('2d');
-      
-      targetChart = new Chart(ctx, {
+      const scatterData = stockData.filter(stock => stock.target_price && stock.target_price > 0)
+        .map(stock => ({
+          x: stock.current_price,
+          y: stock.target_price,
+          text: stock.ticker
+        }));
+
+      if (!scatterData.length) return;
+
+      const data = [{
+        x: scatterData.map(d => d.x),
+        y: scatterData.map(d => d.y),
+        mode: 'markers',
         type: 'scatter',
-        data: {
-          datasets: [{
-            label: 'Current vs Target Price',
-            data: [],
-            backgroundColor: 'rgba(72, 219, 251, 0.6)',
-            borderColor: 'rgba(72, 219, 251, 1)',
-            borderWidth: 2,
-            pointRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              callbacks: {
-                label: function(context) {
-                  const point = context.raw;
-                  return `${point.symbol}: Current $${point.x.toFixed(2)} | Target $${point.y.toFixed(2)}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              title: { display: true, text: 'Current Price ($)', color: '#ffffff', font: { family: 'Inter' } },
-              ticks: { color: '#ffffff', font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            },
-            y: {
-              title: { display: true, text: 'Target Price ($)', color: '#ffffff', font: { family: 'Inter' } },
-              ticks: { color: '#ffffff', font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
+        text: scatterData.map(d => d.text),
+        marker: {
+          size: 12,
+          color: '#48DBFB',
+          line: {
+            color: 'rgba(255,255,255,0.5)',
+            width: 2
           }
-        }
-      });
+        },
+        hovertemplate: '%{text}: Current $%{x:.2f} | Target $%{y:.2f}<extra></extra>'
+      }];
+
+      const layout = {
+        title: { text: '', font: { color: '#ffffff', family: 'Inter' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ffffff', family: 'Inter' },
+        xaxis: {
+          title: 'Current Price ($)',
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)'
+        },
+        yaxis: {
+          title: 'Target Price ($)',
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)'
+        },
+        margin: { l: 60, r: 20, t: 20, b: 60 },
+        height: 250
+      };
+
+      Plotly.newPlot('targetChart', data, layout, {responsive: true, displayModeBar: false});
     }
 
-    // Portfolio Value Distribution Chart
+    // Portfolio Value Distribution Pie Chart
     function createPortfolioChart() {
-      if (portfolioChart) {
-        portfolioChart.destroy();
-      }
+      if (!stockData.length) return;
 
-      const ctx = document.getElementById('portfolioChart').getContext('2d');
-      
-      portfolioChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: [],
-          datasets: [{
-            data: [],
-            backgroundColor: [
-              'rgba(72, 219, 251, 0.8)', 'rgba(76, 175, 80, 0.8)', 'rgba(255, 193, 7, 0.8)',
-              'rgba(244, 67, 54, 0.8)', 'rgba(156, 39, 176, 0.8)', 'rgba(255, 152, 0, 0.8)',
-              'rgba(96, 125, 139, 0.8)', 'rgba(233, 30, 99, 0.8)', 'rgba(121, 85, 72, 0.8)',
-              'rgba(158, 158, 158, 0.8)', 'rgba(0, 150, 136, 0.8)', 'rgba(255, 87, 34, 0.8)',
-              'rgba(103, 58, 183, 0.8)', 'rgba(255, 235, 59, 0.8)', 'rgba(139, 69, 19, 0.8)',
-              'rgba(205, 220, 57, 0.8)'
-            ],
-            borderColor: 'rgba(255, 255, 255, 0.2)',
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { color: '#ffffff', font: { family: 'Inter', size: 10 } }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              callbacks: {
-                label: function(context) {
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percentage = ((context.parsed / total) * 100).toFixed(1);
-                  return `${context.label}: ${percentage}%`;
-                }
-              }
-            }
+      const tickers = stockData.map(stock => stock.ticker);
+      const values = stockData.map(stock => (stock.market_cap || 1000000000) / 1000000000);
+
+      const data = [{
+        labels: tickers,
+        values: values,
+        type: 'pie',
+        hole: 0.4,
+        marker: {
+          colors: ['#48DBFB', '#4CAF50', '#FFC107', '#F44336', '#9C27B0', '#FF9800', 
+                   '#607D8B', '#E91E63', '#795548', '#9E9E9E', '#009688', '#FF5722',
+                   '#673AB7', '#FFEB3B', '#8B4513', '#CDDC39'],
+          line: {
+            color: 'rgba(255,255,255,0.2)',
+            width: 2
           }
-        }
-      });
+        },
+        hovertemplate: '%{label}: %{percent}<extra></extra>'
+      }];
+
+      const layout = {
+        title: { text: '', font: { color: '#ffffff', family: 'Inter' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ffffff', family: 'Inter', size: 10 },
+        showlegend: true,
+        legend: {
+          orientation: "v",
+          x: 1,
+          y: 0.5,
+          font: { color: '#ffffff', size: 9 }
+        },
+        margin: { l: 20, r: 120, t: 20, b: 20 },
+        height: 300
+      };
+
+      Plotly.newPlot('pieChart', data, layout, {responsive: true, displayModeBar: false});
     }
 
     // Risk-Return Scatter Plot
     function createRiskReturnChart() {
-      if (riskReturnChart) {
-        riskReturnChart.destroy();
-      }
+      if (!stockData.length) return;
 
-      const ctx = document.getElementById('riskReturnChart').getContext('2d');
-      
-      riskReturnChart = new Chart(ctx, {
-        type: 'scatter',
-        data: {
-          datasets: [{
-            label: 'Risk vs Return',
-            data: [],
-            backgroundColor: function(context) {
-              const point = context.raw;
-              if (point.y > 0 && point.x < 20) return 'rgba(76, 175, 80, 0.8)'; // Low risk, positive return
-              if (point.y > 0) return 'rgba(255, 193, 7, 0.8)'; // High risk, positive return
-              if (point.x < 20) return 'rgba(255, 152, 0, 0.8)'; // Low risk, negative return
-              return 'rgba(244, 67, 54, 0.8)'; // High risk, negative return
-            },
-            borderColor: 'rgba(255, 255, 255, 0.5)',
-            borderWidth: 1,
-            pointRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              callbacks: {
-                label: function(context) {
-                  const point = context.raw;
-                  return `${point.symbol}: Risk ${point.x.toFixed(1)}% | Return ${point.y.toFixed(2)}%`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              title: { display: true, text: 'Risk (Volatility %)', color: '#ffffff', font: { family: 'Inter' } },
-              ticks: { color: '#ffffff', font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            },
-            y: {
-              title: { display: true, text: 'Return %', color: '#ffffff', font: { family: 'Inter' } },
-              ticks: { color: '#ffffff', font: { family: 'Inter' } },
-              grid: { color: 'rgba(255, 255, 255, 0.1)' }
-            }
-          }
-        }
+      const scatterData = stockData.map(stock => {
+        const risk = stock.week52_high && stock.week52_low ? 
+          Math.abs(((stock.week52_high - stock.week52_low) / stock.current_price) * 100) : 15;
+        const returnValue = parseFloat(stock.price_change_pct_24h) || 0;
+        
+        return {
+          x: risk,
+          y: returnValue,
+          text: stock.ticker
+        };
       });
+
+      const colors = scatterData.map(point => {
+        if (point.y > 0 && point.x < 20) return '#4CAF50'; // Low risk, positive return
+        if (point.y > 0) return '#FFC107'; // High risk, positive return
+        if (point.x < 20) return '#FF9800'; // Low risk, negative return
+        return '#F44336'; // High risk, negative return
+      });
+
+      const data = [{
+        x: scatterData.map(d => d.x),
+        y: scatterData.map(d => d.y),
+        mode: 'markers',
+        type: 'scatter',
+        text: scatterData.map(d => d.text),
+        marker: {
+          size: 12,
+          color: colors,
+          line: {
+            color: 'rgba(255,255,255,0.5)',
+            width: 1
+          }
+        },
+        hovertemplate: '%{text}: Risk %{x:.1f}% | Return %{y:.2f}%<extra></extra>'
+      }];
+
+      const layout = {
+        title: { text: '', font: { color: '#ffffff', family: 'Inter' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#ffffff', family: 'Inter' },
+        xaxis: {
+          title: 'Risk (Volatility %)',
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)'
+        },
+        yaxis: {
+          title: 'Return %',
+          color: '#ffffff',
+          gridcolor: 'rgba(255,255,255,0.1)'
+        },
+        margin: { l: 60, r: 20, t: 20, b: 60 },
+        height: 300
+      };
+
+      Plotly.newPlot('riskReturnChart', data, layout, {responsive: true, displayModeBar: false});
     }
 
     // Performance Heatmap
     function createPerformanceHeatmap() {
-      const heatmapContainer = document.getElementById('performanceHeatmap');
+      const heatmapContainer = document.getElementById('heatmapContainer');
       heatmapContainer.innerHTML = '';
 
       stockData.forEach(stock => {
         const cell = document.createElement('div');
         cell.className = 'heatmap-cell';
+        cell.style.cssText = `
+          width: 80px;
+          height: 60px;
+          margin: 4px;
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 12px;
+          text-align: center;
+          cursor: pointer;
+          transition: transform 0.2s;
+        `;
         
         const change = parseFloat(stock.price_change_pct_24h) || 0;
         let backgroundColor;
@@ -912,134 +893,21 @@
         
         cell.style.backgroundColor = backgroundColor;
         cell.innerHTML = `
-          <div class="heatmap-ticker">${stock.ticker}</div>
-          <div class="heatmap-change">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+          <div style="font-size: 10px; font-weight: 700;">${stock.ticker}</div>
+          <div style="font-size: 11px;">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
         `;
         
         cell.title = `${stock.ticker}: ${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+        cell.addEventListener('mouseenter', () => cell.style.transform = 'scale(1.1)');
+        cell.addEventListener('mouseleave', () => cell.style.transform = 'scale(1)');
+        
         heatmapContainer.appendChild(cell);
       });
     }
 
-    // Update chart functions
-    function updatePerformanceChart() {
-      console.log('updatePerformanceChart called but disabled (Chart.js removed)');
-      return; // Early return since Chart.js is disabled
-      
-      /*
-      if (!performanceChart || !stockData.length) return;
-
-      const timeframe = document.getElementById('performanceTimeframe').value;
-      const tickers = [];
-      const performances = [];
-
-      stockData.forEach(stock => {
-        tickers.push(stock.ticker);
-        let performance = 0;
-        
-        switch(timeframe) {
-          case '1d':
-            performance = parseFloat(stock.price_change_pct_24h) || 0;
-            break;
-          case '1w':
-            performance = stock.week52_high ? ((stock.current_price - stock.week52_low) / stock.week52_low) * 100 : 0;
-            break;
-          case '1m':
-            performance = stock.week52_high ? ((stock.current_price - stock.week52_low) / stock.week52_low) * 100 * 0.3 : 0;
-            break;
-          case 'ytd':
-            performance = stock.week52_high ? ((stock.current_price - stock.week52_low) / stock.week52_low) * 100 * 0.8 : 0;
-            break;
-        }
-        
-        performances.push(performance);
-      });
-
-      performanceChart.data.labels = tickers;
-      performanceChart.data.datasets[0].data = performances;
-      performanceChart.update();
-      */
-    }
-
-    function updateDistanceChart() {
-      if (!distanceChart || !stockData.length) return;
-
-      const tickers = [];
-      const distances = [];
-
-      stockData.forEach(stock => {
-        tickers.push(stock.ticker);
-        const distance = stock.week52_high ? ((stock.current_price - stock.week52_high) / stock.week52_high) * 100 : 0;
-        distances.push(distance);
-      });
-
-      distanceChart.data.labels = tickers;
-      distanceChart.data.datasets[0].data = distances;
-      distanceChart.update();
-    }
-
-    function updateTargetChart() {
-      if (!targetChart || !stockData.length) return;
-
-      const scatterData = [];
-
-      stockData.forEach(stock => {
-        if (stock.target_price && stock.target_price > 0) {
-          scatterData.push({
-            x: stock.current_price,
-            y: stock.target_price,
-            symbol: stock.ticker
-          });
-        }
-      });
-
-      targetChart.data.datasets[0].data = scatterData;
-      targetChart.update();
-    }
-
-    function updatePortfolioChart() {
-      if (!portfolioChart || !stockData.length) return;
-
-      const tickers = [];
-      const marketCaps = [];
-
-      stockData.forEach(stock => {
-        tickers.push(stock.ticker);
-        marketCaps.push((stock.market_cap || 1000000000) / 1000000000); // Convert to billions, default if missing
-      });
-
-      portfolioChart.data.labels = tickers;
-      portfolioChart.data.datasets[0].data = marketCaps;
-      portfolioChart.update();
-    }
-
-    function updateRiskReturnChart() {
-      if (!riskReturnChart || !stockData.length) return;
-
-      const scatterData = [];
-
-      stockData.forEach(stock => {
-        const risk = stock.week52_high && stock.week52_low ? 
-          Math.abs(((stock.week52_high - stock.week52_low) / stock.current_price) * 100) : 15;
-        const returnValue = parseFloat(stock.price_change_pct_24h) || 0;
-        
-        scatterData.push({
-          x: risk,
-          y: returnValue,
-          symbol: stock.ticker
-        });
-      });
-
-      riskReturnChart.data.datasets[0].data = scatterData;
-      riskReturnChart.update();
-    }
-
-    // Initialize all charts (DISABLED FOR TESTING)
+    // Initialize all charts
     function initializeCharts() {
-      console.log('Chart initialization disabled for testing');
-      /*
-      console.log('Initializing charts...');
-      console.log('Chart.js available:', typeof Chart);
+      console.log('Initializing Plotly charts...');
       
       try {
         createPerformanceChart();
@@ -1075,18 +943,19 @@
       } catch (e) {
         console.error('Error creating risk return chart:', e);
       }
-      */
+      
+      try {
+        createPerformanceHeatmap();
+        console.log('Performance heatmap created');
+      } catch (e) {
+        console.error('Error creating performance heatmap:', e);
+      }
     }
 
     // Update all charts
     function updateAllCharts() {
-      console.log('updateAllCharts called, but charts disabled for testing');
-      // updatePerformanceChart();
-      // updateDistanceChart();
-      // updateTargetChart();
-      // updatePortfolioChart();
-      // updateRiskReturnChart();
-      // createPerformanceHeatmap();
+      console.log('Updating all charts with fresh data...');
+      initializeCharts();
     }
 
     // Stats cards update
@@ -1215,7 +1084,7 @@
         // Update all components
         updateStatsCards(data);
         updateTable(data);
-        updateAllCharts(); // Charts are disabled, this just logs
+        updateAllCharts(); // Now using Plotly.js charts
         console.log('✅ Update complete!');
 
       } catch (err) {
